@@ -90,13 +90,7 @@ create_initial_empty_commit_branch() {
   local tree commit
 
   tree="$(git -C "$repo_root" mktree </dev/null)"
-  commit="$(
-    GIT_AUTHOR_NAME="Codex" \
-    GIT_AUTHOR_EMAIL="codex@local.invalid" \
-    GIT_COMMITTER_NAME="Codex" \
-    GIT_COMMITTER_EMAIL="codex@local.invalid" \
-    git -C "$repo_root" commit-tree "$tree" -m "Initial empty commit"
-  )"
+  commit="$(git -C "$repo_root" commit-tree "$tree" -m "Initial empty commit")"
 
   git -C "$repo_root" update-ref "refs/heads/$branch_name" "$commit"
   git -C "$repo_root" symbolic-ref HEAD "refs/heads/$branch_name"
