@@ -53,9 +53,11 @@ This skill is optimized for requests like "repository setup", "set up this repo 
 - Always create the main branch as a worktree. Do not leave the bare repo without a checked-out worktree.
 - During setup, resolve the default branch in `scripts/setup_bare_worktree_repo.sh`, then add the main worktree through `scripts/add_worktree.sh` rather than calling `git worktree add` directly.
 - If `origin/<main-branch>` exists, let `scripts/add_worktree.sh` create the main worktree branch so it tracks that remote branch.
+- If the remote repository is empty, initialize `main` locally with an empty commit so the first worktree can still be created.
 - When adding another worktree later, do not assume `--track -b <branch> origin/<branch>` is safe. In a bare clone, a same-named local branch may already exist.
 - Use `scripts/add_worktree.sh` for the initial main worktree and every additional worktree so existing local branches, remote-only branches, and new branches are handled correctly.
 - If the default branch cannot be inferred from `origin/HEAD`, fall back in this order: user-specified branch, `main`, `master`.
+- When setup initialized an empty remote locally, use the local `main` branch as the start-point for the next new branch until `main` is pushed upstream.
 - If the target directory already exists and is non-empty, stop and explain the conflict instead of overwriting it.
 
 ## Commands to run

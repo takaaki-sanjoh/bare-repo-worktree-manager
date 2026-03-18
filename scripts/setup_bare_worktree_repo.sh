@@ -77,9 +77,18 @@ detect_default_branch() {
   return 1
 }
 
+repo_has_any_branch_refs() {
+  local root="$1"
+  git -C "$root" for-each-ref --count=1 --format='%(refname)' refs/heads refs/remotes | grep -q .
+}
+
 main_branch="$requested_main_branch"
 if [[ -z "$main_branch" ]]; then
   main_branch="$(detect_default_branch "$target_dir" || true)"
+fi
+
+if [[ -z "$main_branch" ]] && ! repo_has_any_branch_refs "$target_dir"; then
+  main_branch="main"
 fi
 
 if [[ -z "$main_branch" ]]; then
@@ -92,9 +101,14 @@ script_dir="$(cd "$(dirname "$0")" && pwd)"
 bash "$script_dir/add_worktree.sh" "$target_dir" "$main_branch" "$target_dir/$main_branch"
 
 echo "[5/5] Done"
+new_branch_start_point="$main_branch"
+if git -C "$target_dir" show-ref --verify --quiet "refs/remotes/origin/$main_branch"; then
+  new_branch_start_point="origin/$main_branch"
+fi
+
 printf 'repo_root=%s\n' "$target_dir"
 printf 'main_branch=%s\n' "$main_branch"
 printf 'main_worktree=%s\n' "$target_dir/$main_branch"
 printf 'main_worktree_created_via=%s\n' "$script_dir/add_worktree.sh"
 printf 'next_existing_or_remote_command=%s\n' "bash $script_dir/add_worktree.sh $target_dir <branch-name>"
-printf 'next_new_branch_command=%s\n' "bash $script_dir/add_worktree.sh $target_dir <branch-name> $target_dir/<branch-name> origin/$main_branch"
+printf 'next_new_branch_command=%s\n' "bash $script_dir/add_worktree.sh $target_dir <branch-name> $target_dir/<branch-name> $new_branch_start_point"

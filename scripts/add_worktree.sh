@@ -82,6 +82,26 @@ if [[ -n "$branch_in_use_path" ]]; then
   exit 4
 fi
 
+repo_has_any_branch_refs() {
+  git -C "$repo_root" for-each-ref --count=1 --format='%(refname)' refs/heads refs/remotes | grep -q .
+}
+
+create_initial_empty_commit_branch() {
+  local tree commit
+
+  tree="$(git -C "$repo_root" mktree </dev/null)"
+  commit="$(
+    GIT_AUTHOR_NAME="Codex" \
+    GIT_AUTHOR_EMAIL="codex@local.invalid" \
+    GIT_COMMITTER_NAME="Codex" \
+    GIT_COMMITTER_EMAIL="codex@local.invalid" \
+    git -C "$repo_root" commit-tree "$tree" -m "Initial empty commit"
+  )"
+
+  git -C "$repo_root" update-ref "refs/heads/$branch_name" "$commit"
+  git -C "$repo_root" symbolic-ref HEAD "refs/heads/$branch_name"
+}
+
 if git -C "$repo_root" show-ref --verify --quiet "refs/heads/$branch_name"; then
   git -C "$repo_root" worktree add "$worktree_path" "$branch_name"
   if git -C "$repo_root" show-ref --verify --quiet "refs/remotes/origin/$branch_name"; then
@@ -91,10 +111,17 @@ elif git -C "$repo_root" show-ref --verify --quiet "refs/remotes/origin/$branch_
   git -C "$repo_root" worktree add --track -b "$branch_name" "$worktree_path" "origin/$branch_name"
 else
   if [[ -z "$start_point" ]]; then
-    echo "Error: branch $branch_name does not exist locally or on origin. Pass a start-point as the fourth argument." >&2
-    exit 5
+    if repo_has_any_branch_refs; then
+      echo "Error: branch $branch_name does not exist locally or on origin. Pass a start-point as the fourth argument." >&2
+      exit 5
+    fi
+
+    echo "Repository has no branches yet; creating $branch_name with an initial empty commit"
+    create_initial_empty_commit_branch
+    git -C "$repo_root" worktree add "$worktree_path" "$branch_name"
+  else
+    git -C "$repo_root" worktree add -b "$branch_name" "$worktree_path" "$start_point"
   fi
-  git -C "$repo_root" worktree add -b "$branch_name" "$worktree_path" "$start_point"
 fi
 
 printf 'repo_root=%s\n' "$repo_root"

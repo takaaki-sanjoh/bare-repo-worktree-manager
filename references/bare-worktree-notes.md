@@ -13,6 +13,7 @@ myapp/
 ```
 
 The important design choice is to treat `main` like any other branch and create it as a worktree.
+If the remote repository is empty, bootstrap `main` locally with an initial empty commit before creating that first worktree.
 
 ## Required setup sequence
 
@@ -42,6 +43,7 @@ This matters because a bare clone may already contain a local branch with the sa
 `git worktree add --track -b <branch> ... origin/<branch>` fails because `-b` tries to create a branch that already exists.
 
 Treating `main` like any other branch keeps the branching rules in one place and avoids duplicating local-vs-remote branch handling between setup and later worktree creation.
+For an empty remote, there is no `origin/main` yet, so subsequent local branch creation should start from `main` until the branch is pushed.
 
 ## Additional worktree examples
 
