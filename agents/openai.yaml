@@ -1,0 +1,4 @@
+interface:
+  display_name: Bare Repo Worktree Manager
+policy:
+  allow_implicit_invocation: true
